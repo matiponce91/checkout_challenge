@@ -1,4 +1,5 @@
 from typing import List
+
 from checkout_challenge.server.models import DiscountModel
 
 

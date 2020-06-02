@@ -1,6 +1,7 @@
-from checkout_challenge.server.services import DiscountService
-from checkout_challenge.server.models import DiscountModel
 from typing import List
+
+from checkout_challenge.server.models import DiscountModel
+from checkout_challenge.server.services import DiscountService
 
 
 class GetDiscountsAction:

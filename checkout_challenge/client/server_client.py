@@ -1,9 +1,8 @@
-from checkout_challenge.server.actions import (
-    CreateCartAction,
-    GetItemsAction,
-    GetDiscountsAction,
-)
 from typing import Any
+
+from checkout_challenge.server.actions import (CreateCartAction,
+                                               GetDiscountsAction,
+                                               GetItemsAction)
 
 
 class ServerClient:

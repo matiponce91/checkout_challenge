@@ -1,7 +1,7 @@
-from checkout_challenge.server.repositories import ItemRepository
-from checkout_challenge.server.models import ItemModel
-
 from typing import List
+
+from checkout_challenge.server.models import ItemModel
+from checkout_challenge.server.repositories import ItemRepository
 
 
 class ItemService:

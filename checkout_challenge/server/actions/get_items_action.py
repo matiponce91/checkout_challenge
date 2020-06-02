@@ -1,6 +1,7 @@
-from checkout_challenge.server.services import ItemService
-from checkout_challenge.server.models import ItemModel
 from typing import List
+
+from checkout_challenge.server.models import ItemModel
+from checkout_challenge.server.services import ItemService
 
 
 class GetItemsAction:

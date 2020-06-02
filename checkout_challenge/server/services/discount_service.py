@@ -1,7 +1,7 @@
-from checkout_challenge.server.repositories import DiscountRepository
-from checkout_challenge.server.models import DiscountModel
-
 from typing import List
+
+from checkout_challenge.server.models import DiscountModel
+from checkout_challenge.server.repositories import DiscountRepository
 
 
 class DiscountService:

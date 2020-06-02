@@ -1,5 +1,6 @@
 from sys import exit
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
+
 from checkout_challenge.client.server_client import ServerClient
 
 
