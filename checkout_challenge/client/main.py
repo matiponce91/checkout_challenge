@@ -80,8 +80,10 @@ class Client:
 
     def calculate_total(self,) -> int:
         amount: int = 0
-        applicable_discounts: List[Optional[dict]] = self.get_applicable_discounts(self.cart)
+        applicable_discounts: List[Optional[dict]] = self.get_applicable_discounts()
         for key, value in self.cart.items():
+            if key == 'id':
+                continue
             if value > 0:
                 item = self.get_item_by_code(key)
                 for discount in applicable_discounts:
@@ -126,13 +128,17 @@ class Client:
                 self.add_item_to_cart()
                 amount = self.calculate_total()
                 option = input(
-                    'Your cart total is {}. Do You want to continue adding items (Y/n): '.format(amount / 100),
+                    'Your cart total is {} {}. Do You want to continue adding items (Y/n): '.format(
+                        amount / 100,
+                        self.currency,
+                    ),
                 )
                 if self.is_valid_yes_or_no_option(option) is False:
                     continue_with_checkout = False
 
             option = input('Your total is {} {}. Do you want to proceed (Y/n): '.format(amount / 100, self.currency))
             if self.is_valid_yes_or_no_option(option) is False:
+                self.server_client.get_client('save_cart', cart=self.cart).run_action()
                 exit()
         else:
             exit()

@@ -15,6 +15,7 @@ class GetDiscountsAction:
                 'min_quantity': d.min_quantity,
                 'max_quantity': d.max_quantity,
                 'free_items': d.free_items,
+                'discount_percentage': d.discount_percentage,
                 'type': d.type,
             })
 
