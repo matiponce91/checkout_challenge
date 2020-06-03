@@ -2,13 +2,15 @@
 
 ## Project structure
 The project is divided in two parts:
-1- Client side
-2- Server side
+1) Client side (under `checkout_challenge/client` folder)
+2) Server side (under `checkout_challenge/server` folder)
 
-The first one (under `client` folder) is just a console client that calls the server side through a client (this `client` calls directly to
-server code but it is though to allow implement any king of transport layer)
+### Client
+It is just a console client that calls the server side through a client (this `client` calls directly to server code 
+but it is designed to allow  to implement in a future any king of transport layer)
 
-The second one (under `server` folder) is the server code. Its structure is the following:
+### Server
+Its structure is the following:
 * actions: all the endpoints that the server allows. There is one class per actions so also could an option to have one
 class with all the related endpoints (for example: having under class `Discount` all the endpoints to 
 get/create/delete/update discounts instead of having 4 different classes). Actions are in charge of receiving request
