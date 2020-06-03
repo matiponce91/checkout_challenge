@@ -1,6 +1,6 @@
 from os import system
 from sys import exit
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from checkout_challenge.client.server_client import ServerClient
 
@@ -24,8 +24,10 @@ class Client:
         elif option.lower() in ['yes', 'y']:
             return True
         else:
+            # If a wrong option value is entered it will recursively ask to enter a new value until the a correct one
+            # is entered
             new_option = input('The value entered is invalid. Please try again')
-            self.is_valid_yes_or_no_option(new_option)
+            return self.is_valid_yes_or_no_option(new_option)
 
     def validate_numeric_option(self, option: str, option_size: int = None) -> int:
         try:
@@ -36,63 +38,20 @@ class Client:
             if type(option) == int and option <= option_size:
                 return option
             else:
+                # If a wrong option value is entered it will recursively ask to enter a new value until the a correct
+                # one is entered
                 new_option = input('The value entered is invalid. Try again: ')
                 return self.validate_numeric_option(new_option, option_size)
 
-    def add_item_to_cart(self):
-        print('Which item do you want to add at your shopping cart: \n')
-        for item in self.items:
-            print('{}- {} -> {} {}'.format(
-                self.items.index(item) + 1,
-                item['name'],
-                item['value'][self.currency],
-                self.currency,
-            ))
-
-        item_option: str = input('\nEnter desired option number:  ')
-        validated_option: int = self.validate_numeric_option(item_option, len(self.items))
-
-        quantity: str = input('Enter how many *{}* do you want: '.format(self.items[validated_option - 1]['name']))
-        validated_quantity: int = self.validate_numeric_option(quantity)
-
-        self.cart[self.items[validated_option - 1]['code']] += validated_quantity
+    def add_item_to_cart(self, item_code: str, quantity: int):
+        self.cart[item_code] += quantity
         # Update the volatile cart information contained on server side.
         self.server_client.get_client('update_volatile_cart', cart=self.cart).run_action()
 
-    def remove_item_from_cart(self):
-        index: int = 0
-        option_index: dict = {}
-        message: str = ''
-        for item in self.items:
-            if self.cart[item['code']] > 0:
-                option_index[index] = item
-                message += '{}- {} -> currently {}\n'.format(
-                    index + 1,
-                    item['name'],
-                    self.cart[item['code']],
-                )
-                index += 1
-
-        if not option_index:
-            input('Shopping cart is empty. Press any key to return to main menu.')
-        else:
-            print('Which item do you want to remove from your shopping cart: \n')
-            print(message)
-            item_option: str = input('Enter desired option number:  ')
-            validated_option: int = self.validate_numeric_option(item_option, index)
-
-            quantity: str = input('Enter how many *{}* do you want to remove (currently: {}): '.format(
-                option_index[validated_option - 1]['name'],
-                self.cart[option_index[validated_option - 1]['code']],
-            ))
-            validated_quantity: int = self.validate_numeric_option(
-                quantity,
-                self.cart[option_index[validated_option - 1]['code']],
-            )
-
-            self.cart[option_index[validated_option - 1]['code']] -= validated_quantity
-            # Update the volatile cart information contained on server side.
-            self.server_client.get_client('update_volatile_cart', cart=self.cart).run_action()
+    def remove_item_from_cart(self, item_code: str, quantity: int):
+        self.cart[item_code] -= quantity
+        # Update the volatile cart information contained on server side.
+        self.server_client.get_client('update_volatile_cart', cart=self.cart).run_action()
 
     def get_applicable_discounts(self) -> List[Optional[dict]]:
         """
@@ -103,18 +62,17 @@ class Client:
         for key, value in self.cart.items():
             for discount in self.discounts:
                 if discount['item'] == key:
-                    # Check if minimum conditions is met
-                    if value >= discount['min_quantity']:
+                    # Check if minimum conditions is met. Maximum condition is only used to calculate ove how many items
+                    # the discount has to be applied so it doesn't matter at this point
+                    if value >= discount['base_quantity']:
                         applicable_discounts.append(discount)
         return applicable_discounts
 
-    def get_item_by_code(self, code: str) -> Dict[str, str]:
-        if code == 'PEN':
-            return self.items[0]
-        elif code == 'TSHIRT':
-            return self.items[1]
-        elif code == 'MUG':
-            return self.items[2]
+    def get_item_by_code(self, code: str) -> Optional[Dict[str, str]]:
+        for item in self.items:
+            if code == item['code']:
+                return item
+        return None
 
     def calculate_total(self,) -> int:
         """
@@ -140,11 +98,11 @@ class Client:
                     if discount['type'] == 'FREE':
                         if discount['item'] == key:
                             quantity_to_discount: int = self.cart[discount['item']]
-                            if discount['max_quantity'] > 0 and value > discount['max_quantity']['key']:
-                                quantity_to_discount: int = discount['max_quantity']['key']
+                            if 0 < discount['max_quantity'] < value:
+                                quantity_to_discount: int = discount['max_quantity']
 
                             free_units: int = int(
-                                self.cart[discount['item']] / discount['min_quantity']
+                                quantity_to_discount / discount['base_quantity']
                             )
                             amount += (quantity_to_discount-free_units) * item['value'][self.currency]
                             value -= quantity_to_discount
@@ -152,8 +110,8 @@ class Client:
                     elif discount['type'] == 'BULK':
                         if discount['item'] == key:
                             quantity_to_discount: int = self.cart[discount['item']]
-                            if discount['max_quantity'] > 0 and discount['max_quantity']['key'] < value:
-                                quantity_to_discount: int = discount['max_quantity']['key']
+                            if 0 < discount['max_quantity'] < value:
+                                quantity_to_discount: int = discount['max_quantity']
 
                             amount += (
                                 quantity_to_discount * item['value'][self.currency]
@@ -167,13 +125,65 @@ class Client:
 
         return amount
 
+    def show_add_item_menu(self) -> Tuple[str, int]:
+        print('Which item do you want to add at your shopping cart: \n')
+        for item in self.items:
+            print('{}- {} -> {} {}'.format(
+                self.items.index(item) + 1,
+                item['name'],
+                item['value'][self.currency],
+                self.currency,
+            ))
+
+        item_option: str = input('\nEnter desired option number: ')
+        validated_option: int = self.validate_numeric_option(item_option, len(self.items))
+
+        quantity: str = input('Enter how many *{}* do you want: '.format(self.items[validated_option - 1]['name']))
+        validated_quantity: int = self.validate_numeric_option(quantity)
+        return self.items[validated_option - 1]['code'], validated_quantity
+
+    def show_remove_item_menu(self) -> Optional[Tuple[str, int]]:
+        index: int = 0
+        option_index: dict = {}
+        message: str = ''
+        for item in self.items:
+            if self.cart[item['code']] > 0:
+                option_index[index] = item
+                message += '{}- {} -> currently {}\n'.format(
+                    index + 1,
+                    item['name'],
+                    self.cart[item['code']],
+                )
+                index += 1
+
+        if not option_index:
+            input('Shopping cart is empty. Press any key to return to main menu.')
+            return None, None
+        else:
+            print('Which item do you want to remove from your shopping cart: \n')
+            print(message)
+            item_option: str = input('Enter desired option number: ')
+            validated_option: int = self.validate_numeric_option(item_option, index)
+
+            quantity: str = input('Enter how many *{}* do you want to remove (currently: {}): '.format(
+                option_index[validated_option - 1]['name'],
+                self.cart[option_index[validated_option - 1]['code']],
+            ))
+            validated_quantity: int = self.validate_numeric_option(
+                quantity,
+                self.cart[option_index[validated_option - 1]['code']],
+            )
+
+            return option_index[validated_option - 1]['code'], validated_quantity
+
     def show_main_menu(self):
+        system('clear')
         print('Welcome to Lana store checkout')
         option: str = input('Do you want to start with checkout (Y/n): ')
         if self.is_valid_yes_or_no_option(option):
-            # With this we create a volatile cart, what means that this is not saved in the common database just to
-            # avoid saving trash in the database if the user doesn't want to buy anything. Meanwhile the transaction
-            # is not finished it can be store in for a Redis or any kind of volatile database
+            # With this a volatile cart is created, what means that this is not saved in the usual database just to
+            # avoid saving trash if for example users exit checkout before buying. Meanwhile the transaction
+            # is not finished it can be store in Redis or any kind of volatile database
             self.cart = self.server_client.get_client('create_volatile_cart').run_action()
             amount: int = 0
             continue_with_checkout: bool = True
@@ -188,10 +198,13 @@ class Client:
                 validated_option: int = self.validate_numeric_option(option, 4)
                 if validated_option == 1:
                     system('clear')
-                    self.add_item_to_cart()
+                    item_code, quantity = self.show_add_item_menu()
+                    self.add_item_to_cart(item_code, quantity)
                 elif validated_option == 2:
                     system('clear')
-                    self.remove_item_from_cart()
+                    item_code, quantity = self.show_remove_item_menu()
+                    if item_code is not None and quantity is not None:
+                        self.remove_item_from_cart(item_code, quantity)
                 elif validated_option == 3:
                     system('clear')
                     continue_with_checkout = False
@@ -209,8 +222,3 @@ class Client:
             exit()
         else:
             exit()
-
-
-# if __name__ == '__main__':
-#     client: Client = Client(currency='EUR')  # It would be assume that the selected currency is EUR
-#     client.show_main_menu()

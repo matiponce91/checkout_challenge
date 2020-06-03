@@ -1,12 +1,9 @@
 from typing import Any
 
-from checkout_challenge.server.actions import (
-    CreateVolatileCartAction,
-    GetDiscountsAction,
-    GetItemsAction,
-    SaveCartAction,
-    UpdateVolatileCartAction,
-)
+from checkout_challenge.server.actions import (CreateVolatileCartAction,
+                                               GetDiscountsAction,
+                                               GetItemsAction, SaveCartAction,
+                                               UpdateVolatileCartAction)
 
 
 # This is a mock of a potential client that could be HTTP or through any other transport

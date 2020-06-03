@@ -14,7 +14,7 @@ class GetDiscountsAction:
         for d in discounts:
             discount_list.append({
                 'item': d.item,
-                'min_quantity': d.min_quantity,
+                'base_quantity': d.base_quantity,
                 'max_quantity': d.max_quantity,
                 'free_items': d.free_items,
                 'discount_percentage': d.discount_percentage,

@@ -17,3 +17,13 @@ data, call the appropriate service and build the response.
 code logic and get all the needed information.
 * repository: this is the ORM layer, potentially in charge of doing database SELECTS/INSERTS/DELETES/UPDATES
 * models: the database object representations.
+
+## Run project
+Once that the repository has been clone, `cd` to the base repository folder and run 
+`docker build -t checkout_challenge .` on terminal. After finishing docker build, run the program doing 
+`docker run -ti checkout_challenge`.
+
+## Testing
+Test would be run automatically during docker image building but also can be executed manually doing 
+`docker run checkout_challenge pytest /usr/local/checkout_challenge/client` (to doing this you have to build the docker
+image first)
