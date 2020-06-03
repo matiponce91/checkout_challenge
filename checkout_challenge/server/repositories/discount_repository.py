@@ -3,6 +3,7 @@ from typing import List
 from checkout_challenge.server.models import DiscountModel
 
 
+# Here we can implement the ORM layer
 class DiscountRepository:
 
     def get_all(self) -> List[DiscountModel]:

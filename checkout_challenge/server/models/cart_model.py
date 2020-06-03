@@ -1,3 +1,4 @@
+# A representation of database objects
 class CartModel:
     id: int
     tshirt_quantity: int

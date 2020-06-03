@@ -3,6 +3,7 @@ from typing import List
 from checkout_challenge.server.models import ItemModel, ItemValueModel
 
 
+# Here we can implement the ORM layer
 class ItemRepository:
 
     def get_all(self) -> List[ItemModel]:

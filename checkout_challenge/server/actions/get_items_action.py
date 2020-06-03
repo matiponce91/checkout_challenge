@@ -4,6 +4,8 @@ from checkout_challenge.server.models import ItemModel
 from checkout_challenge.server.services import ItemService
 
 
+# The controller for this specific action a different possible option would be having one file with multiple
+# related calls
 class GetItemsAction:
 
     def run_action(self) -> List[dict]:

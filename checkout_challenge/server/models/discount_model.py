@@ -1,3 +1,4 @@
+# A representation of database objects
 class DiscountModel:
     id: int
     item: str

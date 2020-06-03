@@ -1,6 +1,7 @@
 from checkout_challenge.server.models import CartModel
 
 
+# Here we can implement the ORM layer
 class CartRepository:
 
     def create(self) -> CartModel:

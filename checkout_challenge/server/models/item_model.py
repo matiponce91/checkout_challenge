@@ -1,6 +1,7 @@
 from typing import List
 
 
+# A representation of database objects
 class ItemValueModel:
     id: int
     amount: int
@@ -12,6 +13,7 @@ class ItemValueModel:
         self.currency = currency
 
 
+# A representation of database objects
 class ItemModel:
     id: int
     code: str
