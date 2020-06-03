@@ -1,3 +1,4 @@
+from os import system
 from sys import exit
 from typing import Any, Dict, List, Optional
 
@@ -26,23 +27,17 @@ class Client:
             new_option = input('The value entered is invalid. Please try again')
             self.is_valid_yes_or_no_option(new_option)
 
-    def is_valid_number_option(self, option: str, option_size: int = None) -> bool:
+    def validate_numeric_option(self, option: str, option_size: int = None) -> int:
         try:
             option = int(option)
         finally:
             if type(option) == int and option_size is None:
-                return True
+                return option
             if type(option) == int and option <= option_size:
-                return True
-            elif type(option) == str and option.lower() == 'exit':
-                exit()
+                return option
             else:
-                new_option = input(
-                    'The value entered is invalid. Try again or if you want to exit, enter *exit*: '.format(
-                        option_size,
-                    ),
-                )
-                return self.is_valid_number_option(new_option, option_size)
+                new_option = input('The value entered is invalid. Try again: ')
+                return self.validate_numeric_option(new_option, option_size)
 
     def add_item_to_cart(self):
         print('Which item do you want to add at your shopping cart: \n')
@@ -55,40 +50,49 @@ class Client:
             ))
 
         item_option: str = input('\nEnter desired option number:  ')
-        if self.is_valid_number_option(item_option, len(self.items)):
-            quantity = input('Enter how many *{}* do you want: '.format(self.items[int(item_option) - 1]['name']))
-            if self.is_valid_number_option(quantity):
-                self.cart[self.items[int(item_option) - 1]['code']] += int(quantity)
-                # Update the volatile cart information contained on server side.
-                self.server_client.get_client('update_volatile_cart', cart=self.cart).run_action()
+        validated_option: int = self.validate_numeric_option(item_option, len(self.items))
+
+        quantity: str = input('Enter how many *{}* do you want: '.format(self.items[validated_option - 1]['name']))
+        validated_quantity: int = self.validate_numeric_option(quantity)
+
+        self.cart[self.items[validated_option - 1]['code']] += validated_quantity
+        # Update the volatile cart information contained on server side.
+        self.server_client.get_client('update_volatile_cart', cart=self.cart).run_action()
 
     def remove_item_from_cart(self):
-        print('Which item do you want to remove from your shopping cart: \n')
-        for key, value in self.cart.items():
-            if key == 'id':
-                continue
-            option_index: dict = {}
-            index: int = 0
-            for item in self.items:
-                if item['code'] == key and value > 0:
-                    option_index[index] = item
-                    print('{}- {} -> currently added {}'.format(
-                        index + 1,
-                        item['name'],
-                        value,
-                    ))
-                    index += 1
+        index: int = 0
+        option_index: dict = {}
+        message: str = ''
+        for item in self.items:
+            if self.cart[item['code']] > 0:
+                option_index[index] = item
+                message += '{}- {} -> currently {}\n'.format(
+                    index + 1,
+                    item['name'],
+                    self.cart[item['code']],
+                )
+                index += 1
 
-            item_option: str = input('\nEnter desired option number:  ')
-            if self.is_valid_number_option(item_option, index + 1):
-                quantity = input('Enter how many *{}* do you want to remove (currently: {}): '.format(
-                    option_index[int(item_option)]['name'],
-                    self.cart[option_index[int(item_option)]['code']],
-                ))
-                if self.is_valid_number_option(quantity, self.cart[option_index[int(item_option)]['code']]):
-                    self.cart[option_index[int(item_option)]['code']] -= int(quantity)
-                    # Update the volatile cart information contained on server side.
-                    self.server_client.get_client('update_volatile_cart', cart=self.cart).run_action()
+        if not option_index:
+            input('Shopping cart is empty. Press any key to return to main menu.')
+        else:
+            print('Which item do you want to remove from your shopping cart: \n')
+            print(message)
+            item_option: str = input('Enter desired option number:  ')
+            validated_option: int = self.validate_numeric_option(item_option, index)
+
+            quantity: str = input('Enter how many *{}* do you want to remove (currently: {}): '.format(
+                option_index[validated_option - 1]['name'],
+                self.cart[option_index[validated_option - 1]['code']],
+            ))
+            validated_quantity: int = self.validate_numeric_option(
+                quantity,
+                self.cart[option_index[validated_option - 1]['code']],
+            )
+
+            self.cart[option_index[validated_option - 1]['code']] -= validated_quantity
+            # Update the volatile cart information contained on server side.
+            self.server_client.get_client('update_volatile_cart', cart=self.cart).run_action()
 
     def get_applicable_discounts(self) -> List[Optional[dict]]:
         """
@@ -174,23 +178,29 @@ class Client:
             amount: int = 0
             continue_with_checkout: bool = True
             while continue_with_checkout:
-                self.add_item_to_cart()
-                # Each time a new item is added to the cart, the total amount is updated and shown to the user
-                amount = self.calculate_total()
-                print('Your shopping cart total is {} {}. Do You want to: '.format(amount / 100, self.currency))
+                system('clear')
+                print('Your shopping cart total is {} {}. Do You want to: \n'.format(amount / 100, self.currency))
                 print('1- Add more items to your cart')
                 print('2- Remove an item from cart')
-                print('3- Exit')
-                option = input('Enter desired option number:')
-                if self.is_valid_number_option(option, 3) is False:
-                    option = int(option)
-                    if option == 1:
-                        continue_with_checkout = False
-                    if option == 2:
-                        self.remove_item_from_cart()
-                        print('Your shopping cart total is {} {}. Do You want to: '.format(amount / 100, self.currency))
-                    else:
-                        exit()
+                print('3- Finalize purchase')
+                print('4- Exit')
+                option = input('\nEnter desired option number: ')
+                validated_option: int = self.validate_numeric_option(option, 4)
+                if validated_option == 1:
+                    system('clear')
+                    self.add_item_to_cart()
+                elif validated_option == 2:
+                    system('clear')
+                    self.remove_item_from_cart()
+                elif validated_option == 3:
+                    system('clear')
+                    continue_with_checkout = False
+                else:
+                    system('clear')
+                    exit()
+                # Each time cart content is modified (items are added/removed), the total amount is updated and shown
+                # to the user
+                amount = self.calculate_total()
 
             option = input('Your total is {} {}. Do you want to proceed (Y/n): '.format(amount / 100, self.currency))
             if self.is_valid_yes_or_no_option(option) is True:

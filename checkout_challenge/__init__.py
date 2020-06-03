@@ -1,8 +1,7 @@
 import os
-
-from checkout_challenge.client.main import Client
-
 os.getcwd()
+import ipdb;ipdb.set_trace()
+from checkout_challenge.client.main import Client
 
 
 if __name__ == '__main__':
